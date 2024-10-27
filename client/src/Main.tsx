@@ -11,6 +11,8 @@ import {
   AlertIcon,
   AlertTitle,
 } from '@chakra-ui/react';
+
+import { toaster } from "@/components/ui/toaster"
 import { useEffect, useRef, useState } from 'react';
 import Features from './Features';
 import FeaturesComingSoon from './FeaturesComingSoon';
@@ -19,11 +21,10 @@ import LogoWhite from './Icons/LogoWhite';
 import NothingFoundAlert from './NothingFoundAlert';
 import PreviewBox from './PreviewBox';
 import Search from './Search';
-import SelectFormat from './SelectFormat';
 import Sidebar, { HistoryItem } from './Sidebar';
 import Suggestions from './Suggestions';
 import { getInfos, getSuggestions } from './utils/API';
-import { getDownloadUrl, isYtUrl } from './utils/helpers';
+import { getDownloadUrl, isUrl } from './utils/helpers';
 
 export default function Main() {
   const { colorMode } = useColorMode();
@@ -100,40 +101,71 @@ export default function Main() {
 
 
   const handleSearch = async () => {
-    const isYouTubeUrl = isYtUrl(input);
+
+    const _isUrl = isUrl(input);
+
     if (!input) {
       setError(true);
+      toast({
+        title: 'This is not valid URL!',
+        description:
+          'Please provide a valid url!',
+        status: 'success',
+        duration: 9000,
+        isClosable: true,
+        colorScheme: 'red'
+      });
+
+      reset();
       return;
     }
-    if (isYouTubeUrl) {
+    if (_isUrl) {
       setError(false);
       setConvertionLoading(true);
+
       try {
         const { data } = await getInfos(input);
-        const {
-          data: { videoDetails },
-        } = data;
-        setCurrentVideo(videoDetails);
+        console.log(data.data);
+
+        setError(false);
+        setCurrentVideo(data.data);
         setConvertionLoading(false);
       } catch (err) {
+
         setError(true);
-        setConvertionLoading(false);
+
+        toast({
+          title: 'URL Error',
+          description:
+            'Given URL is not supported!',
+          status: 'success',
+          duration: 9000,
+          isClosable: true,
+        colorScheme: 'red'
+        });
+
+        // }
+        setTimeout(() => {
+          reset();
+        }, 2000);
+
       }
-    } else {
-      fetchSuggestions();
     }
+    setError(true);
+
   };
 
-  const chooseFormat = async (format: string, videoId: string) => {
+  const startDownload = async (format: string, videoMetadata: any) => {
     setDownloadUrl('');
     try {
-      const videoInfo = await getInfos(videoId);
-      const downloadUrl = getDownloadUrl(videoId, format);
+
+      const downloadUrl = getDownloadUrl(videoMetadata, format);
       setDownloadUrl(downloadUrl);
+      
       const downloadInfo = {
-        title: videoInfo.data.data.videoDetails.title,
-        imageUrl: videoInfo.data.data.videoDetails.thumbnails[0].url,
-        videoLength: videoInfo.data.data.videoDetails.lengthSeconds,
+        title: videoMetadata.title,
+        imageUrl: videoMetadata.thumbnails[0].url,
+        videoLength: videoMetadata.duration,
         format,
         date: new Date(),
       };
@@ -173,14 +205,14 @@ export default function Main() {
           />
           <PreviewBox
             data={currentVideo}
-            chooseFormat={chooseFormat}
+            chooseFormat={startDownload}
             isLoading={isConvertionLoading}
           />
         </Box>
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}
         <Suggestions
           data={suggestions}
-          chooseFormat={chooseFormat}
+          chooseFormat={startDownload}
           isLoading={isSearchLoading}
         />
         {!!suggestions.length && (

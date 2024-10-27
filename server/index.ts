@@ -1,37 +1,21 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import ytdl from '@distube/ytdl-core';
-import { google } from 'googleapis';
 import contentDisposition from 'content-disposition';
 import dotenv from 'dotenv';
 import { sendMail } from './sendMail';
+
+import YTDlpWrap from 'yt-dlp-wrap';
+import { format } from 'path';
+import { pipeline } from 'stream';
+
+
+
 dotenv.config();
+const ytDlpWrap: YTDlpWrap = new YTDlpWrap();
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
-
-const youtube = google.youtube({
-  version: 'v3',
-  auth: process.env.YOUTUBE_KEY,
-});
-
-
-interface SearchParams {
-  q?: string;
-  pageToken?: string;
-  maxResults?: number;
-}
-
-async function searchYouTube(params: SearchParams = {}) {
-  const res = await youtube.search.list({
-    // @ts-ignore
-    part: 'snippet',
-    type: 'video',
-    ...params,
-  });
-  return (res as any).data;
-}
-
 
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));
@@ -69,43 +53,20 @@ app.post('/contact', async (req: Request, res: Response) => {
 app.get('/formats', async (req: Request, res: Response) => {
   try {
     const videoURL: string = req.query.url as string;
-    const formats = await ytdl.getInfo(videoURL);
-    res.status(200).json(formats.formats);
+
+    const raw_formats = await ytDlpWrap.execPromise([
+      videoURL,
+      '--list-formats', '-j'
+    ])
+
+    res.status(200).json(JSON.parse(raw_formats).formats);
+
   } catch (error) {
     console.error('Error while getting the formats:', error);
     res.status(500).send('Some error occurred while getting the formats.');
   }
 });
 
-/**
- * Get suggestions depending on the search query/value.
- */
-app.get('/suggestions', async (req: Request, res: Response) => {
-  const { search, next = null } = req.query as { search?: string; next?: string | null };
-
-  try {
-    const data = await searchYouTube({
-      q: search,
-      // nextPageToken: next,
-      pageToken: next as any,
-      maxResults: 14,
-    });
-
-    // @ts-ignore
-    const { items, nextPageToken, pageInfo, regionCode, prevPageToken } = data;
-    res.status(200).json({
-      success: true,
-      data: items,
-      pagingInfo: { ...pageInfo, nextPageToken, regionCode, prevPageToken },
-    });
-  } catch (error: any) {
-    console.error(error);
-    if (error.status === 403) {
-      res.status(403).json({ success: false, error, limitExceeded: true });
-    }
-    res.status(400).json({ success: false, error, limitExceeded: true });
-  }
-});
 
 /**
  * Get information about a video.
@@ -113,27 +74,72 @@ app.get('/suggestions', async (req: Request, res: Response) => {
 app.get('/metainfo', async (req: Request, res: Response) => {
   const url = req.query.url as string;
 
-  if (!ytdl.validateID(url) && !ytdl.validateURL(url)) {
-    res.status(400).json({ success: false, error: 'No valid YouTube Id!' });
-  }
-
   try {
-    const result = await ytdl.getInfo(url);
+    const result = await ytDlpWrap.getVideoInfo(
+      url
+    );
     res.status(200).json({ success: true, data: result });
+
   } catch (error: any) {
-    console.error(error);
-    res.status(400).json({ success: false, error });
+
+    if ((error.toString().includes('[generic]'))) {
+      res.status(404).json({ success: false, message: 'Unsupported website!' });
+    }
+    else {
+      res.status(400).json({ success: false, error });
+    }
+
   }
 });
 
 /**
  * Download a video with the selected format.
  */
-app.get('/watch', async (req: Request, res: Response) => {
-  const { v: url, format: f = '.mp4' } = req.query as {
-    v?: string;
-    format?: string;
-  };
+app.get('/download', async (req: Request, res: Response) => {
+  const url: string = (req.query.url as string);
+  const ext: string = (req.query.ext as string).trim() ?? '.mp4';
+
+  switch (ext) {
+    case '.mp4':
+
+      
+      
+      res.setHeader('Content-Type', 'video/mp4'); // Set content type
+      //res.setHeader('Content-Disposition', 'inline'); // Optionally specify how to handle content
+      res.setHeader('Content-Disposition', 'attachment; filename="download.mp4"'); // Prompt download with filename
+      res.setHeader('Accept-Ranges', 'bytes'); // Support for seeking
+
+      let readableStream = ytDlpWrap.execStream([
+        url,
+        '-f',
+        'bestvideo[ext=mp4]+bestaudio/bestvideo+bestaudio',
+        '--merge-output-format', 'mp4'
+      ]);
+
+      readableStream.pipe(res);
+
+      readableStream.on('error', (err) => {
+        console.log(err)
+        //res.status(500).json({ success: false, error: err.message });
+      });
+
+
+      break;
+    case '.mp3':
+      res.status(200).json({ success: false, error: 'MP3!' });
+
+
+      break;
+
+    default:
+      res.status(404).json({ success: false, error: 'No valid format!' });
+      return;
+  }
+
+
+  //res.status(200).json({ success: false, error: 'Not implemented yet!' });
+  /*
+  return;
 
   if (url === undefined || (!ytdl.validateID(url) && !ytdl.validateURL(url))) {
     res.status(400).json({ success: false, error: 'No valid YouTube Id!' });
@@ -155,5 +161,5 @@ app.get('/watch', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('error', err);
     res.redirect(`http://${req.headers.host}?error=downloadError`);
-  }
+  }*/
 });

@@ -4,7 +4,7 @@ import ConvertBoxSkeleton from './ConvertBoxSkeleton';
 interface Props {
   data: any;
   isLoading: boolean;
-  chooseFormat: (format: string, videoId: string) => void;
+  chooseFormat: (format: string, videoMetadata: any) => void;
 }
 export default function PreviewBox(props: Props) {
   const { isLoading, data, chooseFormat } = props;

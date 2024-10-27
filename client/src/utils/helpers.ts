@@ -11,6 +11,18 @@ export const isYtUrl = (url: string) => {
 };
 
 /**
+ * Check if the URL is a valid URL.
+ * @param url - The URL to check.
+ * @returns True if it's a valid URL, otherwise false.
+ */
+export const isUrl = (url: string): boolean => {
+    // Regular expression for validating a URL
+    const urlPattern = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/[^\s]*)?$/i;
+    return urlPattern.test(url);
+};
+
+
+/**
  * Check if the page is running on localhost (dev environment).
  */
 export const isLocalHost = window.location.hostname === 'localhost';
@@ -24,12 +36,12 @@ export const host = isLocalHost
 
 /**
  * Get download-url from YouTube-Video.
- * @param videoId YouTube-Video-ID
+ * @param videoMetadata YouTube-Video-ID
  * @param format Format, e.g. mp4, mp3
  * @returns
  */
-export const getDownloadUrl = (videoId: string, format = 'mp4') =>
-  `${host}/watch?v=${videoId}&format=${format}`;
+export const getDownloadUrl = (videoMetadata: any, format = 'mp4') =>
+  `${host}/download?url=${videoMetadata.original_url}&ext=${format}`;
 
 /**
  * Available formats to download.
@@ -37,8 +49,8 @@ export const getDownloadUrl = (videoId: string, format = 'mp4') =>
 export const formats = [
   { text: 'MP4', format: '.mp4' },
   { text: 'MP3', format: '.mp3' },
-  { text: 'MOV', format: '.mov' },
-  { text: 'FLV', format: '.flv' },
+  //{ text: 'MOV', format: '.mov' },
+  //{ text: 'FLV', format: '.flv' },
 ];
 
 /**

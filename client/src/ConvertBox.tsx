@@ -16,10 +16,11 @@ import { formats } from './utils/helpers';
 
 interface Props {
   data: any;
-  chooseFormat: (format: string, videoId: string) => void;
+  chooseFormat: (format: string, videoMetadata: any) => void;
 }
 export default function ConvertBox(props: Props) {
   const { data, chooseFormat } = props;
+
 
   return (
     <Box
@@ -51,7 +52,7 @@ export default function ConvertBox(props: Props) {
                 {formats.map((format) => (
                   <MenuItem
                     key={format.text}
-                    onClick={() => chooseFormat(format.format, data.videoId)}
+                    onClick={() => chooseFormat(format.format, data)}
                   >
                     {format.text}
                   </MenuItem>

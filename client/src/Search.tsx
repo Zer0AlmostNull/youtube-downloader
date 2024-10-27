@@ -1,5 +1,6 @@
 import React from 'react';
-import { Input, Box, Flex, Button } from '@chakra-ui/react';
+import { Input, Box, Flex, Button} from '@chakra-ui/react';
+import { Field } from "@/components/ui/field"
 
 interface Props {
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -19,13 +20,25 @@ const Search = (props: Props) => {
   return (
     <Box mt="2" mb="2">
       <Flex gridGap="2">
-        <Input
-          isInvalid={error}
-          placeholder="Search or paste YouTube link here"
-          onChange={handleChange}
-          value={input}
-          onKeyDown={handleKeydown}
-        />
+        {error && <Field invalid errorText="This field is required">
+          <Input
+            isInvalid={error}
+            placeholder="Paste video link here..."
+            onChange={handleChange}
+            value={input}
+            onKeyDown={handleKeydown}
+          />
+        </Field>}
+        {!error && 
+          <Input
+            isInvalid={error}
+            placeholder="Paste video link here..."
+            onChange={handleChange}
+            value={input}
+            onKeyDown={handleKeydown}
+          />
+       }
+
         <Button
           onClick={handleSearch}
           isLoading={isLoading}

@@ -17,6 +17,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "googleapis": "^144.0.0",
+    "lru-cache": "^11.0.1",
     "nodemailer": "^6.9.15",
     "yt-dlp-wrap": "^2.3.12"
   },

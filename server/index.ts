@@ -144,17 +144,18 @@ app.get('/download', async (req: Request, res: Response) => {
 
       break;
     case 'aud':
-      res.setHeader('Content-Type', 'video/mp4');
-      res.setHeader('Content-Disposition', 'attachment; filename="download.mp4"');
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Disposition', 'attachment; filename="download.mp3"');
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('Transfer-Encoding', 'chunked')
       res.setHeader('Accept-Ranges', 'bytes');
 
       let readableAudioStream = ytDlpWrap.execStream([
         url,
-        '-f',
-        'bestaudio',
-        '--recode-video', 'mp3'// <- recode id nescessart
+        '-f', 'bestaudio/best',
+        '-x',
+        '--audio-format' , 'mp3'
+        //'--recode-video', 'mp3'// <- recode id nescessart
 
       ]).on('ytDlpEvent', (eventType, eventData) =>
         console.log(eventType, eventData))

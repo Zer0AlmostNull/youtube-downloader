@@ -12,7 +12,7 @@ import {
   AlertTitle,
 } from '@chakra-ui/react';
 
-import { toaster } from "@/components/ui/toaster"
+
 import { useEffect, useRef, useState } from 'react';
 import Features from './Features';
 import FeaturesComingSoon from './FeaturesComingSoon';

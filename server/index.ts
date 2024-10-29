@@ -16,6 +16,7 @@ const formatCache = new LRUCache<string, any>({
   ttl: 1000 * 60 * 60    // Default TTL of 5 minutes (in milliseconds)
 });
 
+
 const getFormatJSON = async (url: string): Promise<unknown | undefined> => {
 
   try {
@@ -35,7 +36,6 @@ const getFormatJSON = async (url: string): Promise<unknown | undefined> => {
   }
 }
 
-
 (async () => {
 
   //console.log(JSON.stringify(await getFormatJSON('https://www.youtube.com/watch?v=aqz-KE-bpKQ')))
@@ -47,8 +47,9 @@ const getFormatJSON = async (url: string): Promise<unknown | undefined> => {
 })()
 
 
-
 //dotenv.config();
+
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com)(\/[^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
@@ -96,12 +97,19 @@ app.post('/contact', async (req: Request, res: Response) => {
 app.get('/metainfo', async (req: Request, res: Response) => {
   const url = req.query.url as string;
 
+  if (!supportedUrlPattern.test(url)) {
+    res.status(400).json({ success: false, message: 'Unsupported website!' });
+  }
+
+
   const result = await getFormatJSON(url);
 
-  if (result)
+  if (result) {
     res.status(200).json({ success: true, data: result });
-  else
-    res.status(404).json({ success: false, message: 'Unsupported website!' });
+  }
+  else {
+    res.status(400).json({ success: false, message: 'Unsupported website!' });
+  }
 });
 
 /**
@@ -111,7 +119,9 @@ app.get('/download', async (req: Request, res: Response) => {
   const url: string = (req.query.url as string);
   const format: string = (req.query.format as string || 'vid');
 
-
+  if (!supportedUrlPattern.test(url)) {
+    res.status(400).json({ success: false, message: 'Unsupported website!' });
+  }
 
   switch (format) {
     case 'vid':
@@ -154,7 +164,7 @@ app.get('/download', async (req: Request, res: Response) => {
         url,
         '-f', 'bestaudio/best',
         '-x',
-        '--audio-format' , 'mp3'
+        '--audio-format', 'mp3'
         //'--recode-video', 'mp3'// <- recode id nescessart
 
       ]).on('ytDlpEvent', (eventType, eventData) =>
@@ -172,7 +182,7 @@ app.get('/download', async (req: Request, res: Response) => {
       break;
 
     default:
-      res.status(404).json({ success: false, error: 'No valid format!' });
+      res.status(400).json({ success: false, error: 'No valid format!' });
       return;
   }
 

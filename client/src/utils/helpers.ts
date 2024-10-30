@@ -18,8 +18,16 @@ export const isYtUrl = (url: string) => {
 export const isSuportedUrl = (url: string): boolean => {
   // Regular expression for validating a URL
 
-  const urlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com)(\/[^\s]*)?$/i;
+  const urlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com|tiktok\.com)(\/[^\s]*)?$/i;
   return urlPattern.test(url);
+};
+
+export enum AppState{
+  Reset = 0,
+  RequestingMetadata = 1,
+  DownloadingMetedata = 2,
+  ShowingMetadata = 3,
+  DownloadingVideo = 4,
 };
 
 

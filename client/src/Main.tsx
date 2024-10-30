@@ -22,19 +22,18 @@ import NothingFoundAlert from './NothingFoundAlert';
 import PreviewBox from './PreviewBox';
 import Search from './Search';
 import Sidebar, { HistoryItem } from './Sidebar';
-import Suggestions from './Suggestions';
-import { getInfos, getSuggestions } from './utils/API';
-import { FormatType, getDownloadUrl, isSuportedUrl } from './utils/helpers';
+import { AppState, FormatType, getDownloadUrl, isSuportedUrl } from './utils/helpers';
+import { getMetadata } from './utils/API';
 
 export default function Main() {
   const { colorMode } = useColorMode();
   const toast = useToast();
   const [downloadUrl, setDownloadUrl] = useState('');
   const [input, setInput] = useState('');
-  const [isConvertionLoading, setConvertionLoading] = useState(false);
-  const [isSearchLoading, setSearchLoading] = useState(false);
+
+  const [appState, setAppState] = useState<AppState>(AppState.Reset);
+
   const [currentVideo, setCurrentVideo] = useState(null);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [pagingInfo, setPagingInfo] = useState<any>(null);
   const [error, setError] = useState(false);
   const downloadBtnRef = useRef<HTMLAnchorElement>(null);
@@ -53,7 +52,7 @@ export default function Main() {
 
   useEffect(() => {
     if (downloadUrl.length && downloadBtnRef?.current) {
-      setConvertionLoading(false);
+      setAppState(AppState.DownloadingVideo)
       downloadBtnRef.current.click();
     }
   }, [downloadUrl]);
@@ -65,43 +64,14 @@ export default function Main() {
   const reset = () => {
     setError(false);
     setInput('');
-    setSearchLoading(false);
-    setConvertionLoading(false);
+    setAppState(AppState.Reset);
   }
-
-  const fetchSuggestions = async () => {
-    setError(false);
-    setSearchLoading(true);
-    try {
-      const { data } = await getSuggestions(input, pagingInfo?.nextPageToken);
-      setPagingInfo(data.pagingInfo);
-      setSuggestions((previousSuggestions) => [
-        ...previousSuggestions,
-        ...data.data,
-      ]);
-      setSearchLoading(false);
-    } catch (err) {
-      setError(true);
-      // if (err && err.status === 403) {
-      toast({
-        title: 'YouTube Search Limit exceeded',
-        description:
-          'You can search again tomorrow. Just paste the URL into the searchfield. This will still works. The YouTube-API allows only a few search requests.',
-        status: 'warning',
-        duration: 9000,
-        isClosable: true,
-      });
-      // }
-      setTimeout(() => {
-        reset();
-      }, 2000);
-      console.error(err);
-    }
-  };
-
 
   const handleSearch = async () => {
 
+    // change state to reset
+    setAppState(AppState.Reset);
+    setError(false);
 
     if (!input || !isSuportedUrl(input)) {
       setError(true);
@@ -116,21 +86,19 @@ export default function Main() {
         colorScheme: 'red'
       });
 
-
       return;
     }
 
-    setError(false);
-    setConvertionLoading(true);
 
     try {
-      const response = (await getInfos(input));
+      setAppState(AppState.RequestingMetadata);
+
+      const response = (await getMetadata(input, () => setAppState(AppState.DownloadingMetedata)));
 
       const data = JSON.parse(response.data.data) //JSON.parse();
-
       setError(false);
       setCurrentVideo(data);
-      setConvertionLoading(false);
+      setAppState(AppState.ShowingMetadata);
     } catch (err) {
 
       setError(true);
@@ -201,15 +169,12 @@ export default function Main() {
             handleSearch={handleSearch}
             error={error}
             input={input}
-            isLoading={
-              (isConvertionLoading && !isSearchLoading) ||
-              (!isConvertionLoading && isSearchLoading)
-            }
+            loadingState={appState}
           />
           <PreviewBox
             data={currentVideo}
             chooseFormat={startDownload}
-            isLoading={isConvertionLoading}
+            loadingState={appState}
           />
         </Box>
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}

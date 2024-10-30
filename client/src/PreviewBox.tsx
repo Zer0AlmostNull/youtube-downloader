@@ -1,15 +1,17 @@
 import ConvertBox from './ConvertBox';
 import ConvertBoxSkeleton from './ConvertBoxSkeleton';
-import { FormatType } from './utils/helpers';
+import { AppState, FormatType } from './utils/helpers';
 
 interface Props {
   data: any;
-  isLoading: boolean;
+  loadingState: AppState;
   chooseFormat: (format: FormatType, videoMetadata: any) => void;
 }
 export default function PreviewBox(props: Props) {
-  const { isLoading, data, chooseFormat } = props;
-  if (isLoading) {
+  const { loadingState, data, chooseFormat } = props;
+  if (loadingState == AppState.DownloadingMetedata || 
+      loadingState == AppState.RequestingMetadata)
+    {
     return <ConvertBoxSkeleton />;
   }
   if (!data) {

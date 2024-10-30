@@ -6,21 +6,15 @@ export const API = axios.create({
   responseType: 'json',
 });
 
-export const getFormats = async (videoURL: string) => {
-  return await API.get(`/formats?url=${encodeURIComponent(videoURL)}`);
-};
 
-export const getSuggestions = async (
-  searchQuery: string,
-  nextPageToken: string = ''
-) => {
-  return await API.get(
-    `/suggestions?search=${searchQuery}&next=${nextPageToken}`
-  );
-};
+export const getMetadata = async (url: string, onDownloadStartedCallback?: Function) => {
+  if (typeof onDownloadStartedCallback === 'function') {
+    //    onDownloadStartedCallback();
+  }
 
-export const getInfos = async (url: string) => {
-  return await API.get(`/metainfo?url=${url}`);
+  return await API.get(`/metainfo?url=${url}`, {
+    onDownloadProgress: (eventProgress) => { if (eventProgress.loaded === 0 && (typeof onDownloadStartedCallback === 'function')) onDownloadStartedCallback(); },
+  });
 };
 
 export const sendContactForm = async (formData: { email: string, issueType: string, description: string }) => {

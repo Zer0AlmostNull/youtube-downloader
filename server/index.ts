@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 
 //import { sendMail } from './sendMail';
+import compression from 'compression';
 
 import YTDlpWrap from 'yt-dlp-wrap';
 
@@ -36,20 +37,7 @@ const getMetadata = async (url: string): Promise<unknown | undefined> => {
   }
 }
 
-(async () => {
-
-  //console.log(JSON.stringify(await getFormatJSON('https://www.youtube.com/watch?v=aqz-KE-bpKQ')))
-  //console.log(await getFormatJSON('https://www.youtube.com/watch?v=aqz-KE-bpKQ'))
-  //  console.log((await getFormatJSON('https://www.youtube.com/watch?v=aqz-KE-bpKQ') as string).slice(0, 10));
-  //  console.log((await getFormatJSON('https://www.youtube.com/watch?v=aqz-KE-bpKQ') as string).slice(0, 10));
-  //  console.log((await getFormatJSON('https://x.com/weirddalle/status/1850118117587878140') as string).slice(0, 10));
-
-})()
-
-
-//dotenv.config();
-
-const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com)(\/[^\s]*)?$/i;
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com|tiktok\.com)(\/[^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
@@ -58,6 +46,10 @@ const port: string | number = process.env.PORT || 4000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));
 app.use(cors());
 app.use(express.json());
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+}));
 
 /*
 app.post('/contact', async (req: Request, res: Response) => {

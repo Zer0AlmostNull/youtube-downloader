@@ -1,10 +1,11 @@
 import ConvertBox from './ConvertBox';
 import ConvertBoxSkeleton from './ConvertBoxSkeleton';
+import { FormatType } from './utils/helpers';
 
 interface Props {
   data: any;
   isLoading: boolean;
-  chooseFormat: (format: string, videoMetadata: any) => void;
+  chooseFormat: (format: FormatType, videoMetadata: any) => void;
 }
 export default function PreviewBox(props: Props) {
   const { isLoading, data, chooseFormat } = props;

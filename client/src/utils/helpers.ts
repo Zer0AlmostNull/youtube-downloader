@@ -15,10 +15,11 @@ export const isYtUrl = (url: string) => {
  * @param url - The URL to check.
  * @returns True if it's a valid URL, otherwise false.
  */
-export const isUrl = (url: string): boolean => {
-    // Regular expression for validating a URL
-    const urlPattern = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/[^\s]*)?$/i;
-    return urlPattern.test(url);
+export const isSuportedUrl = (url: string): boolean => {
+  // Regular expression for validating a URL
+
+  const urlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com)(\/[^\s]*)?$/i;
+  return urlPattern.test(url);
 };
 
 
@@ -40,15 +41,21 @@ export const host = isLocalHost
  * @param format Format, e.g. mp4, mp3
  * @returns
  */
-export const getDownloadUrl = (videoMetadata: any, format = 'mp4') =>
-  `${host}/download?url=${videoMetadata.original_url}&ext=${format}`;
+export const getDownloadUrl = (videoMetadata: any, format: FormatType) =>
+  `${host}/download?url=${videoMetadata.original_url}&format=${format.type??'vid'}`;
 
 /**
  * Available formats to download.
  */
-export const formats = [
-  { text: 'MP4', format: '.mp4' },
-  { text: 'MP3', format: '.mp3' },
+export interface FormatType {
+  text: string;
+  format: string;
+  type: string; // Making `type` optional since some formats don’t have this field
+}
+
+export const formats: FormatType[] = [
+  { text: 'MP4', format: '.mp4', type: 'vid' },
+  { text: 'MP3', format: '.mp3', type: 'aud' }
   //{ text: 'MOV', format: '.mov' },
   //{ text: 'FLV', format: '.flv' },
 ];

@@ -12,14 +12,53 @@ import {
   MenuItem,
   MenuList,
 } from '@chakra-ui/react';
-import { formats } from './utils/helpers';
+import { formats, FormatType } from './utils/helpers';
+import { useEffect, useState } from 'react';
 
 interface Props {
   data: any;
-  chooseFormat: (format: string, videoMetadata: any) => void;
+  chooseFormat: (format: FormatType, videoMetadata: any) => void;
 }
 export default function ConvertBox(props: Props) {
   const { data, chooseFormat } = props;
+
+  const [avaliableFormats, setAvaliableFormats] = useState<FormatType[]>(formats);
+
+  const updateFormats = () => {
+
+    const newformats = formats.filter(
+      (item: FormatType) => {
+        if (!props.data) return false;
+
+
+        switch (item.type) {
+          case 'aud':
+            return props.data.formats.some((item: { acodec?: string; }) => (item.acodec && item.acodec != 'none'));
+
+          case 'vid':
+            return props.data.formats.some((item: { vcodec?: string; }) => (item.vcodec && item.vcodec != 'none'));
+          default:
+            return true;
+        }
+
+      }
+
+    );
+
+    console.log(newformats);
+
+    setAvaliableFormats(newformats);
+    
+  };
+
+
+
+  useEffect(() => {
+    updateFormats();
+  }, [formats, props.data]);
+
+
+
 
 
   return (
@@ -30,6 +69,7 @@ export default function ConvertBox(props: Props) {
       _hover={{
         background: useColorModeValue('gray.200', 'gray.700'),
       }}
+      style={{ borderRadius: '10px', overflow: 'hidden' }}
     >
       <Box>
         <Grid alignItems="center" gridAutoFlow="column">
@@ -49,14 +89,15 @@ export default function ConvertBox(props: Props) {
                 Download
               </MenuButton>
               <MenuList>
-                {formats.map((format) => (
+                {avaliableFormats && avaliableFormats.map((format) => (
                   <MenuItem
                     key={format.text}
-                    onClick={() => chooseFormat(format.format, data)}
+                    onClick={() => chooseFormat(format, data)}
                   >
                     {format.text}
                   </MenuItem>
                 ))}
+                {!avaliableFormats && <MenuItem>No avaliable formats!</MenuItem>}
               </MenuList>
             </Menu>
           </Box>

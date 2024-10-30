@@ -24,7 +24,7 @@ import Search from './Search';
 import Sidebar, { HistoryItem } from './Sidebar';
 import Suggestions from './Suggestions';
 import { getInfos, getSuggestions } from './utils/API';
-import { getDownloadUrl, isUrl } from './utils/helpers';
+import { FormatType, getDownloadUrl, isSuportedUrl } from './utils/helpers';
 
 export default function Main() {
   const { colorMode } = useColorMode();
@@ -87,7 +87,7 @@ export default function Main() {
         title: 'YouTube Search Limit exceeded',
         description:
           'You can search again tomorrow. Just paste the URL into the searchfield. This will still works. The YouTube-API allows only a few search requests.',
-        status: 'success',
+        status: 'warning',
         duration: 9000,
         isClosable: true,
       });
@@ -102,71 +102,74 @@ export default function Main() {
 
   const handleSearch = async () => {
 
-    const _isUrl = isUrl(input);
 
-    if (!input) {
+    if (!input || !isSuportedUrl(input)) {
       setError(true);
+
       toast({
-        title: 'This is not valid URL!',
+        title: 'This is not valid or supported URL!',
         description:
           'Please provide a valid url!',
-        status: 'success',
+        status: 'error',
         duration: 9000,
         isClosable: true,
         colorScheme: 'red'
       });
 
-      reset();
+
       return;
     }
-    if (_isUrl) {
+
+    setError(false);
+    setConvertionLoading(true);
+
+    try {
+      const response = (await getInfos(input));
+
+      const data = JSON.parse(response.data.data) //JSON.parse();
+
       setError(false);
-      setConvertionLoading(true);
+      setCurrentVideo(data);
+      setConvertionLoading(false);
+    } catch (err) {
 
-      try {
-        const { data } = await getInfos(input);
-        console.log(data.data);
+      setError(true);
 
-        setError(false);
-        setCurrentVideo(data.data);
-        setConvertionLoading(false);
-      } catch (err) {
-
-        setError(true);
-
-        toast({
-          title: 'URL Error',
-          description:
-            'Given URL is not supported!',
-          status: 'success',
-          duration: 9000,
-          isClosable: true,
+      toast({
+        title: 'Internal server error!',
+        description:
+          'Please contanct the administrator!',
+        status: 'error',
+        duration: 9000,
+        isClosable: true,
         colorScheme: 'red'
-        });
+      });
 
-        // }
-        setTimeout(() => {
-          reset();
-        }, 2000);
+      console.error(err);
 
-      }
+      // }
+      setTimeout(() => {
+        reset();
+      }, 2000);
+
     }
-    setError(true);
+
+
 
   };
 
-  const startDownload = async (format: string, videoMetadata: any) => {
+  const startDownload = async (format: FormatType, videoMetadata: any) => {
     setDownloadUrl('');
     try {
 
       const downloadUrl = getDownloadUrl(videoMetadata, format);
       setDownloadUrl(downloadUrl);
-      
-      const downloadInfo = {
+
+      const downloadInfo: HistoryItem = {
         title: videoMetadata.title,
         imageUrl: videoMetadata.thumbnails[0].url,
         videoLength: videoMetadata.duration,
-        format,
+        format: format.type,
         date: new Date(),
       };
       setDownloads((prevState) => [...prevState, downloadInfo]);
@@ -210,22 +213,6 @@ export default function Main() {
           />
         </Box>
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}
-        <Suggestions
-          data={suggestions}
-          chooseFormat={startDownload}
-          isLoading={isSearchLoading}
-        />
-        {!!suggestions.length && (
-          <Button
-            onClick={fetchSuggestions}
-            isLoading={isSearchLoading}
-            loadingText="Loading more..."
-            colorScheme="gray"
-            width="100%"
-          >
-            Load More
-          </Button>
-        )}
         <Features />
         <FeaturesComingSoon />
       </Container>

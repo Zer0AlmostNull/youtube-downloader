@@ -11,16 +11,16 @@ import { fetchAndCache } from './cache';
 
 const ytDlpWrap: YTDlpWrap = new YTDlpWrap();
 
-const formatCache = new LRUCache<string, any>({
+const metadataCache = new LRUCache<string, any>({
   max: 200,             // Maximum items allowed in cache
   ttl: 1000 * 60 * 60    // Default TTL of 5 minutes (in milliseconds)
 });
 
 
-const getFormatJSON = async (url: string): Promise<unknown | undefined> => {
+const getMetadata = async (url: string): Promise<unknown | undefined> => {
 
   try {
-    const result = await fetchAndCache(formatCache, url, async (param: string) => {
+    const result = await fetchAndCache(metadataCache, url, async (param: string) => {
       const value = await ytDlpWrap.getVideoInfo(
         param
       );
@@ -49,7 +49,7 @@ const getFormatJSON = async (url: string): Promise<unknown | undefined> => {
 
 //dotenv.config();
 
-const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com)(\/[^\s]*)?$/i;
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com)(\/[^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
@@ -102,7 +102,7 @@ app.get('/metainfo', async (req: Request, res: Response) => {
   }
 
 
-  const result = await getFormatJSON(url);
+  const result = await getMetadata(url);
 
   if (result) {
     res.status(200).json({ success: true, data: result });
@@ -122,6 +122,8 @@ app.get('/download', async (req: Request, res: Response) => {
   if (!supportedUrlPattern.test(url)) {
     res.status(400).json({ success: false, message: 'Unsupported website!' });
   }
+
+  //const metadata = getMetadata(url);
 
   switch (format) {
     case 'vid':
@@ -159,6 +161,8 @@ app.get('/download', async (req: Request, res: Response) => {
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('Transfer-Encoding', 'chunked')
       res.setHeader('Accept-Ranges', 'bytes');
+
+
 
       let readableAudioStream = ytDlpWrap.execStream([
         url,

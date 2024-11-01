@@ -127,16 +127,21 @@ app.get('/download', async (req: Request, res: Response) => {
   }
 
 
+  let controller = new AbortController();
+  res.on('close', () => {
+    controller.abort()
+  });
+
+
   switch (format) {
     case 'vid':
 
-      res.writeHead(200, {
-        'Content-Type': 'video/mp4',
-        'Content-Disposition': `attachment; filename="${title}.mp4"`,
-        'Connection': 'keep-alive',
-        'Transfer-Encoding': 'chunked',
-        'Accept-Ranges': 'bytes',
-      })
+
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Transfer-Encoding', 'chunked');
+      res.setHeader('Accept-Ranges', 'bytes');
 
       let readableAVStream = ytDlpWrap.execStream([
         url,
@@ -146,17 +151,14 @@ app.get('/download', async (req: Request, res: Response) => {
         //'--print-traffic',
         '--remux-video', 'mp4',// <- recode id nescessary
         '--no-playlist'
-      ]).on('ytDlpEvent', (eventType, eventData) =>
+      ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
         console.log(eventType, eventData))
-        .on('error', (error) => console.error(error))
-        .on('close', () => console.log('all done'));
+        .on('error', (error) => console.error('Closed on error'))
+        .on('close', () => console.log('All downloaded'));
 
       readableAVStream.pipe(res);
 
-      readableAVStream.on('error', (err) => {
-        console.log(err)
-        res.json({ success: false, error: err.message });
-      });
+      readableAVStream.on('error', (err) => { console.log(err) });
 
 
       break;
@@ -170,8 +172,6 @@ app.get('/download', async (req: Request, res: Response) => {
         'Accept-Ranges': 'bytes',
       })
 
-
-
       let readableAudioStream = ytDlpWrap.execStream([
         url,
         '-f', 'bestaudio/best',
@@ -179,17 +179,14 @@ app.get('/download', async (req: Request, res: Response) => {
         '--audio-format', 'mp3'
         //'--recode-video', 'mp3'// <- recode id nescessart
 
-      ]).on('ytDlpEvent', (eventType, eventData) =>
+      ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
         console.log(eventType, eventData))
         .on('error', (error) => console.error(error))
         .on('close', () => console.log('all done'));
 
       readableAudioStream.pipe(res);
 
-      readableAudioStream.on('error', (err) => {
-        console.log(err)
-        res.json({ success: false, error: err.message });
-      });
+      readableAudioStream.on('error', (err) => {console.log(err)});
 
       break;
 

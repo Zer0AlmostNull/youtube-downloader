@@ -1,10 +1,8 @@
-export function escapeFileName(name: string): string {
-    // Define a regular expression for characters that are not allowed in filenames
-    const invalidChars = /[<>:"/\\|?*\x00-\x1F]/g;
-    
-    // Replace invalid characters with underscores
-    const escapedName = name.replace(invalidChars, '_');
-    
-    // Trim trailing whitespace and replace multiple underscores with a single underscore
-    return escapedName.replace(/\s+/g, '_').replace(/_+/g, '_');
+export function escapeFileName(filename: string): string {
+    // Escape double quotes and other unsafe characters for RFC compatibility
+    const safeFilename = filename.replace(/["\\]/g, '_');  // Replace quotes and backslashes
+    const encodedFilename = encodeURIComponent(safeFilename);
+
+    // Create the Content-Disposition header value
+    return encodedFilename;
 }

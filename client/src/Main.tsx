@@ -52,7 +52,7 @@ export default function Main() {
 
   useEffect(() => {
     if (downloadUrl.length && downloadBtnRef?.current) {
-      
+
       setAppState(AppState.DownloadingVideo)
       downloadBtnRef.current.click();
 
@@ -98,7 +98,7 @@ export default function Main() {
 
       const response = (await getMetadata(input, () => setAppState(AppState.DownloadingMetedata)));
 
-      const data = JSON.parse(response.data.data) //JSON.parse();
+      const data = response.data.data; //JSON.parse();
       setError(false);
       setCurrentVideo(data);
       setAppState(AppState.ShowingMetadata);

@@ -21,6 +21,7 @@ import { formatSecondsToMinutesAndSeconds } from './utils/helpers';
 
 export interface HistoryItem {
   imageUrl: string;
+  downloadUrl?: string;
   title: string;
   format: string;
   date: Date;

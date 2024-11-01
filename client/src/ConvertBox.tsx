@@ -56,11 +56,6 @@ export default function ConvertBox(props: Props) {
   useEffect(() => {
     updateFormats();
   }, [formats, props.data]);
-
-
-
-
-
   return (
     <Box
       transition="all .2s ease-in-out"
@@ -92,7 +87,7 @@ export default function ConvertBox(props: Props) {
                 {avaliableFormats && avaliableFormats.map((format) => (
                   <MenuItem
                     key={format.text}
-                    onClick={() => chooseFormat(format, data)}
+                    onClick={() => {chooseFormat(format, data);}}
                   >
                     {format.text}
                   </MenuItem>

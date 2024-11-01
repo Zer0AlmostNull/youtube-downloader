@@ -9,6 +9,9 @@ import YTDlpWrap from 'yt-dlp-wrap';
 import { LRUCache } from 'lru-cache'
 import { fetchAndCache } from './cache';
 
+// !!! IMPORTANT 
+// requires binaries of ffmpeg and yt-dlp to function
+
 
 const ytDlpWrap: YTDlpWrap = new YTDlpWrap();
 
@@ -18,14 +21,13 @@ const metadataCache = new LRUCache<string, any>({
 });
 
 
-const getMetadata = async (url: string): Promise<unknown | undefined> => {
+const getMetadata = async (url: string): Promise<any | undefined> => {
 
   try {
     const result = await fetchAndCache(metadataCache, url, async (param: string) => {
       const value = await ytDlpWrap.getVideoInfo(
         param
       );
-
 
       return JSON.stringify(value);
     });
@@ -37,7 +39,7 @@ const getMetadata = async (url: string): Promise<unknown | undefined> => {
   }
 }
 
-const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com|tiktok\.com)(\/[^\s]*)?$/i;
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok)([^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
@@ -114,8 +116,16 @@ app.get('/download', async (req: Request, res: Response) => {
   if (!supportedUrlPattern.test(url)) {
     res.status(400).json({ success: false, message: 'Unsupported website!' });
   }
+  console.log(`download request: ${url}`);
+  let title = 'download'
+  const metadata: any | undefined = await getMetadata(url);
+  
+  console.log(metadata);
+  if (metadata !== undefined) {
+    title = (metadata as { title?: string }).title??title; 
+  }
+  console.log(title);
 
-  //const metadata = getMetadata(url);
 
   switch (format) {
     case 'vid':
@@ -131,7 +141,7 @@ app.get('/download', async (req: Request, res: Response) => {
         'bestvideo+bestaudio/best',
         //'--remux-video', 'mp4'
         //'--print-traffic',
-        '--remux-video', 'mp4',// <- recode id nescessart
+        '--remux-video', 'mp4',// <- recode id nescessary
         '--no-playlist'
       ]).on('ytDlpEvent', (eventType, eventData) =>
         console.log(eventType, eventData))

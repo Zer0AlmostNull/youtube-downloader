@@ -37,12 +37,12 @@ export default function Main() {
   const [pagingInfo, setPagingInfo] = useState<any>(null);
   const [error, setError] = useState(false);
   const downloadBtnRef = useRef<HTMLAnchorElement>(null);
-  const [downloads, setDownloads] = useState<HistoryItem[]>([]);
+  const [downloads, setHistoryDownloads] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
     const storedDownloads = localStorage.getItem('downloads');
     if (storedDownloads && JSON.parse(storedDownloads)?.length > 0) {
-      setDownloads(JSON.parse(storedDownloads));
+      setHistoryDownloads(JSON.parse(storedDownloads));
     }
   }, []);
 
@@ -52,8 +52,11 @@ export default function Main() {
 
   useEffect(() => {
     if (downloadUrl.length && downloadBtnRef?.current) {
+      
       setAppState(AppState.DownloadingVideo)
       downloadBtnRef.current.click();
+
+      setDownloadUrl('');
     }
   }, [downloadUrl]);
 
@@ -126,21 +129,23 @@ export default function Main() {
 
   };
 
-  const startDownload = async (format: FormatType, videoMetadata: any) => {
-    setDownloadUrl('');
+  const startDownload = async (format: FormatType, videoMetadata: any) => {    
+    
     try {
-
+      
       const downloadUrl = getDownloadUrl(videoMetadata, format);
+
       setDownloadUrl(downloadUrl);
 
       const downloadInfo: HistoryItem = {
         title: videoMetadata.title,
+        downloadUrl: downloadUrl,
         imageUrl: videoMetadata.thumbnails[0].url,
         videoLength: videoMetadata.duration,
         format: format.type,
         date: new Date(),
       };
-      setDownloads((prevState) => [...prevState, downloadInfo]);
+      setHistoryDownloads((prevState) => [...prevState, downloadInfo]);
     } catch (err) {
       setError(true);
     }
@@ -148,7 +153,7 @@ export default function Main() {
 
   const handleDeleteHistory = () => {
     localStorage.removeItem('downloads');
-    setDownloads([]);
+    setHistoryDownloads([]);
   };
 
   return (

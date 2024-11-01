@@ -18,7 +18,7 @@ export const isYtUrl = (url: string) => {
 export const isSuportedUrl = (url: string): boolean => {
   // Regular expression for validating a URL
 
-  const urlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|instagram\.com|twitter\.com|x\.com|tiktok\.com)(\/[^\s]*)?$/i;
+  const urlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok)([^\s]*)?$/i;
   return urlPattern.test(url);
 };
 
@@ -58,14 +58,12 @@ export const getDownloadUrl = (videoMetadata: any, format: FormatType) =>
 export interface FormatType {
   text: string;
   format: string;
-  type: string; // Making `type` optional since some formats don’t have this field
+  type: string;
 }
 
 export const formats: FormatType[] = [
   { text: 'MP4', format: '.mp4', type: 'vid' },
   { text: 'MP3', format: '.mp3', type: 'aud' }
-  //{ text: 'MOV', format: '.mov' },
-  //{ text: 'FLV', format: '.flv' },
 ];
 
 /**

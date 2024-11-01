@@ -1,7 +1,7 @@
 
 import { LRUCache } from 'lru-cache'
 
-async function fetchAndCache(cache: LRUCache<string, any, unknown>, key: string, fetchFunc: (key: string) => unknown | undefined): Promise<unknown | undefined> {
+async function fetchAndCache(cache: LRUCache<string, any, unknown>, key: string, fetchFunc: (key: string) => any | undefined): Promise<any | undefined> {
     let cachedValue = cache.get(key);
 
     if (!cachedValue) {

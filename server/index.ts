@@ -8,6 +8,7 @@ import YTDlpWrap from 'yt-dlp-wrap';
 
 import { LRUCache } from 'lru-cache'
 import { fetchAndCache } from './cache';
+import { escapeFileName } from './helper';
 
 // !!! IMPORTANT 
 // requires binaries of ffmpeg and yt-dlp to function
@@ -29,7 +30,7 @@ const getMetadata = async (url: string): Promise<any | undefined> => {
         param
       );
 
-      return JSON.stringify(value);
+      return (value);
     });
 
     return result
@@ -118,22 +119,24 @@ app.get('/download', async (req: Request, res: Response) => {
   }
   console.log(`download request: ${url}`);
   let title = 'download'
+
   const metadata: any | undefined = await getMetadata(url);
-  
-  console.log(metadata);
   if (metadata !== undefined) {
-    title = (metadata as { title?: string }).title??title; 
+    title = (metadata as { title?: string }).title ?? title;
+    title = escapeFileName(title)
   }
-  console.log(title);
 
 
   switch (format) {
     case 'vid':
-      res.setHeader('Content-Type', 'video/mp4');
-      res.setHeader('Content-Disposition', 'attachment; filename="download.mp4"');
-      res.setHeader('Connection', 'keep-alive');
-      res.setHeader('Transfer-Encoding', 'chunked')
-      res.setHeader('Accept-Ranges', 'bytes');
+
+      res.writeHead(200, {
+        'Content-Type': 'video/mp4',
+        'Content-Disposition': `attachment; filename="${title}.mp4"`,
+        'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
+        'Accept-Ranges': 'bytes',
+      })
 
       let readableAVStream = ytDlpWrap.execStream([
         url,
@@ -158,11 +161,14 @@ app.get('/download', async (req: Request, res: Response) => {
 
       break;
     case 'aud':
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Content-Disposition', 'attachment; filename="download.mp3"');
-      res.setHeader('Connection', 'keep-alive');
-      res.setHeader('Transfer-Encoding', 'chunked')
-      res.setHeader('Accept-Ranges', 'bytes');
+
+      res.writeHead(200, {
+        'Content-Type': 'audio/mpeg',
+        'Content-Disposition': `attachment; filename="${title}.mp3"`,
+        'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
+        'Accept-Ranges': 'bytes',
+      })
 
 
 

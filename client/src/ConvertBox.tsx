@@ -45,7 +45,6 @@ export default function ConvertBox(props: Props) {
 
     );
 
-    console.log(newformats);
 
     setAvaliableFormats(newformats);
     

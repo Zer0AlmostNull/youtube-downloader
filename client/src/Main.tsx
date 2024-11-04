@@ -25,6 +25,11 @@ import Sidebar, { HistoryItem } from './Sidebar';
 import { AppState, FormatType, getDownloadUrl, isSuportedUrl } from './utils/helpers';
 import { getMetadata } from './utils/API';
 
+
+import white_logo from './Icons/white_logo.png';
+import black_logo from './Icons/black_logo.png';
+
+
 export default function Main() {
   const { colorMode } = useColorMode();
   const toast = useToast();
@@ -166,7 +171,7 @@ export default function Main() {
         <Box textAlign="center" fontSize="xl">
           <Box mt="5" mb="5">
             <Heading size="2xl" mb="2">
-              {colorMode === 'light' ? <LogoBlack /> : <LogoWhite />}
+              {colorMode === 'light' ? <img src={black_logo} alt="logoblack"></img> : <img src={white_logo} alt="logowhite"></img>}
             </Heading>
           </Box>
           <Search

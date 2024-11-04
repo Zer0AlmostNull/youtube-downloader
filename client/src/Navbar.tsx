@@ -12,6 +12,9 @@ import LogoBlackNoSlogan from './Icons/LogoBlackNoSlogan';
 import LogoWhiteNoSlogan from './Icons/LogoWhiteNoSlogan';
 import { isLocalHost } from './utils/helpers';
 
+import white_logo from './Icons/white_logo.png';
+import black_logo from './Icons/black_logo.png';
+
 // const Links = ['Dashboard', 'Projects', 'Team'];
 
 // const NavLink = ({ children }: { children: ReactNode }) => (
@@ -43,24 +46,21 @@ export default function Navbar() {
             display={{ md: 'none' }}
             onClick={isOpen ? onClose : onOpen}
           /> */}
-          <HStack spacing={8} alignItems={'center'}>
-            <Heading size="lg">
-              <Link
-                href={`${
-                  isLocalHost
-                    ? 'http://localhost:3000'
-                    : 'https://youtubdle.com'
-                }`}
-                _hover={{ textDecoration: 'none', color: 'gray.500' }}
-              >
-                {colorMode === 'light' ? (
-                  <LogoBlackNoSlogan />
-                ) : (
-                  <LogoWhiteNoSlogan />
-                )}
-              </Link>
-            </Heading>
-            {/* <HStack
+          <Link
+            href={`${isLocalHost
+              ? 'http://localhost:3000'
+              : 'https://youtubdle.com'
+              }`}
+            _hover={{ textDecoration: 'none', color: 'gray.500' }}
+            style={{ height: '100%', width: 'auto' }}
+
+          >
+            {colorMode === 'light' ? <img src={black_logo} alt="logoblack" style={{ height: '100%', width: 'auto', maxWidth: '100%' }}
+            ></img> : <img src={white_logo} alt="logowhite" style={{ height: '100%', width: 'auto', maxWidth: '100%' }}
+            ></img>}
+
+          </Link>
+          {/* <HStack
               as={'nav'}
               spacing={4}
               display={{ base: 'none', md: 'flex' }}
@@ -69,7 +69,6 @@ export default function Navbar() {
                 <NavLink key={link}>{link}</NavLink>
               ))}
             </HStack> */}
-          </HStack>
           <Flex alignItems={'center'}>
             <ColorModeSwitcher />
           </Flex>

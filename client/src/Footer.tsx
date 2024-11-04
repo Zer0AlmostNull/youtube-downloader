@@ -31,9 +31,11 @@ import GithubIcon from './Icons/GithubIcon';
 import HeartIcon from './Icons/HeartIcon';
 import InstagramIcon from './Icons/InstagramIcon';
 import LinkedinIcon from './Icons/LinkedinIcon';
-import LogoBlack from './Icons/LogoBlack';
-import LogoWhite from './Icons/LogoWhite';
 import ContactForm from './ContactForm';
+
+import white_logo from './Icons/white_logo.png';
+import black_logo from './Icons/black_logo.png';
+
 
 const socialMedia = [
   {
@@ -129,9 +131,10 @@ export default function Footer() {
             spacing={8}
           >
             <Stack spacing={6} align="flex-start">
-              <Box>{colorMode === 'light' ? <LogoBlack /> : <LogoWhite />}</Box>
+              <Box>              {colorMode === 'light' ? <img src={black_logo} alt="logoblack" style={{maxWidth: '30%'}}></img> : <img style={{maxWidth: '30%'}} src={white_logo} alt="logowhite"></img>}
+              </Box>
               <Text fontSize={'sm'}>
-                © {new Date().getFullYear()} YouTubdle. All rights reserved
+                © {new Date().getFullYear()} ClipGrab. All rights reserved
               </Text>
               <Stack direction={'row'} spacing={6}>
                 {socialMedia.map((media) => (
@@ -167,40 +170,8 @@ export default function Footer() {
                   icon={<BiMailSend />}
                 />
               </Stack>
-              <Box>
-                <Button onClick={contactFormOnOpen} mr="2" mt="6">
-                  Contact
-                </Button>
-                <Button onClick={changeLogOnOpen} mr="2" mt="6">
-                  Changelog
-                </Button>
-                <Button onClick={imprintOnOpen} mt="6">
-                  Imprint
-                </Button>
-              </Box>
             </Stack>
           </SimpleGrid>
-        </Container>
-        <Container
-          py="3"
-          bg={useColorModeValue('gray.200', 'gray.900')}
-          maxW="full"
-        >
-          <Box>
-            <Flex alignItems="center" flexDirection="column">
-              <Text>
-                Made by{' '}
-                <Link href="https://bennymeier-media.de" target="_blank">
-                  bennymeier-media.de
-                </Link>
-              </Text>
-              <HeartIcon
-                color="red.400"
-                transitionDuration="0.3s"
-                _hover={{ transform: 'rotate(30deg)' }}
-              />
-            </Flex>
-          </Box>
         </Container>
       </Box>
 
@@ -385,28 +356,7 @@ export default function Footer() {
         </ModalContent>
       </Modal>
 
-      <Modal onClose={imprintOnClose} size="xl" isOpen={imprintIsOpen}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Imprint</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Heading size="sm" mb="2">
-              Benny Meier Media
-            </Heading>
-            <Text>Benjamin Meier</Text>
-            <Flex alignItems="center" gridGap={2}>
-              <EmailIcon />{' '}
-              <Link href="mailto:hi@bennymeier-media.de">
-                hi@bennymeier-media.de
-              </Link>
-            </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={imprintOnClose}>Close</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+
     </>
   );
 }

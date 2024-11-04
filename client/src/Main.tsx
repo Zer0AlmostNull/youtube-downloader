@@ -16,8 +16,6 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import Features from './Features';
 import FeaturesComingSoon from './FeaturesComingSoon';
-import LogoBlack from './Icons/LogoBlack';
-import LogoWhite from './Icons/LogoWhite';
 import NothingFoundAlert from './NothingFoundAlert';
 import PreviewBox from './PreviewBox';
 import Search from './Search';
@@ -189,7 +187,6 @@ export default function Main() {
         </Box>
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}
         <Features />
-        <FeaturesComingSoon />
       </Container>
       <VisuallyHidden>
         <a href={downloadUrl} download ref={downloadBtnRef}>

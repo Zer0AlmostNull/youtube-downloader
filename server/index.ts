@@ -40,10 +40,26 @@ const getMetadata = async (url: string): Promise<any | undefined> => {
   }
 }
 
-const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok)([^\s]*)?$/i;
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok|vm.tiktok)([^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
+
+
+import fs from 'fs/promises'; // Async fs with Promises
+import path from 'path';
+
+const logFilePath = path.join(__dirname, 'server.log');
+
+// Asynchronous non-blocking logging function
+const logToFile = async (message: string) => {
+  const timestamp = new Date().toISOString();
+  try {
+    await fs.appendFile(logFilePath, `[${timestamp}] ${message}\n`);
+  } catch (err) {
+    console.error('Failed to write to log file:', err);
+  }
+};
 
 
 app.listen(port, () => console.log(`Server is running on port ${port}`));
@@ -109,88 +125,92 @@ app.get('/metainfo', async (req: Request, res: Response) => {
  * Download a video with the selected format.
  */
 app.get('/download', async (req: Request, res: Response) => {
-  const url: string = (req.query.url as string);
-  const format: string = (req.query.format as string || 'vid');
+  try {
+    const url: string = (req.query.url as string);
+    const format: string = (req.query.format as string || 'vid');
 
-  if (!supportedUrlPattern.test(url)) {
-    res.status(400).json({ success: false, message: 'Unsupported website!' });
+    if (!supportedUrlPattern.test(url)) {
+      res.status(400).json({ success: false, message: 'Unsupported website!' });
+    }
+    console.log(`download request: ${url}`);
+    let title = 'download'
+
+    const metadata: any | undefined = await getMetadata(url);
+    if (metadata !== undefined) {
+      title = (metadata as { title?: string }).title ?? title;
+      title = escapeFileName(title)
+    }
+
+
+    let controller = new AbortController();
+    res.on('close', () => {
+      controller.abort()
+    });
+
+
+    switch (format) {
+      case 'vid':
+
+
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('Accept-Ranges', 'bytes');
+
+        let readableAVStream = ytDlpWrap.execStream([
+          url,
+          '-f',
+          'bestvideo+bestaudio/best',
+          //'--remux-video', 'mp4'
+          //'--print-traffic',
+          '--remux-video', 'mp4',// <- recode id nescessary
+          '--no-cache-dir',
+          '--no-playlist'
+        ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
+          console.log(eventType, eventData))
+          .on('error', async (error) => await logToFile(`Download error (video): ${error}`))
+          .on('close', async () => await logToFile(`Video download closed: ${url}`));
+
+        readableAVStream.on('error', async (err) => { console.log(err); await logToFile(`Video stream error: ${url}`) });
+
+        readableAVStream.pipe(res);
+
+      case 'aud':
+
+        res.writeHead(200, {
+          'Content-Type': 'audio/mpeg',
+          'Content-Disposition': `attachment; filename="${title}.mp3"`,
+          'Connection': 'keep-alive',
+          'Transfer-Encoding': 'chunked',
+          'Accept-Ranges': 'bytes',
+        })
+
+        let readableAudioStream = ytDlpWrap.execStream([
+          url,
+          '-f', 'bestaudio/best',
+          '-x',
+          '--audio-format', 'mp3',
+          '--no-cache-dir',
+          '--recode-video', 'mp3'// <- recode id nescessart
+
+        ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
+          console.log(eventType, eventData))
+          .on('error', async (error) => await logToFile(`Download error (audio): ${error}`))
+          .on('close', async () => await logToFile(`Audio download complete: ${url}`));
+
+        readableAudioStream.on('error', async (err) => { console.log(err); await logToFile(`Audio stream error: ${url}`) });
+
+        readableAudioStream.pipe(res);
+       
+      default:
+        res.status(400).json({ success: false, error: 'No valid format!' });
+        return;
+    }
+  } catch (error) {
+    await logToFile(`Error during download process: ${error}`);
+    //res.status(500).json({ success: false, message: 'Error processing download' });
   }
-  console.log(`download request: ${url}`);
-  let title = 'download'
 
-  const metadata: any | undefined = await getMetadata(url);
-  if (metadata !== undefined) {
-    title = (metadata as { title?: string }).title ?? title;
-    title = escapeFileName(title)
-  }
-
-
-  let controller = new AbortController();
-  res.on('close', () => {
-    controller.abort()
-  });
-
-
-  switch (format) {
-    case 'vid':
-
-
-      res.setHeader('Content-Type', 'video/mp4');
-      res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
-      res.setHeader('Connection', 'keep-alive');
-      res.setHeader('Transfer-Encoding', 'chunked');
-      res.setHeader('Accept-Ranges', 'bytes');
-
-      let readableAVStream = ytDlpWrap.execStream([
-        url,
-        '-f',
-        'bestvideo+bestaudio/best',
-        //'--remux-video', 'mp4'
-        //'--print-traffic',
-        '--remux-video', 'mp4',// <- recode id nescessary
-        '--no-playlist'
-      ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
-        console.log(eventType, eventData))
-        .on('error', (error) => console.error('Closed on error'))
-        .on('close', () => console.log('All downloaded'));
-
-      readableAVStream.pipe(res);
-
-      readableAVStream.on('error', (err) => { console.log(err) });
-
-
-      break;
-    case 'aud':
-
-      res.writeHead(200, {
-        'Content-Type': 'audio/mpeg',
-        'Content-Disposition': `attachment; filename="${title}.mp3"`,
-        'Connection': 'keep-alive',
-        'Transfer-Encoding': 'chunked',
-        'Accept-Ranges': 'bytes',
-      })
-
-      let readableAudioStream = ytDlpWrap.execStream([
-        url,
-        '-f', 'bestaudio/best',
-        '-x',
-        '--audio-format', 'mp3'
-        //'--recode-video', 'mp3'// <- recode id nescessart
-
-      ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
-        console.log(eventType, eventData))
-        .on('error', (error) => console.error(error))
-        .on('close', () => console.log('all done'));
-
-      readableAudioStream.pipe(res);
-
-      readableAudioStream.on('error', (err) => {console.log(err)});
-
-      break;
-
-    default:
-      res.status(400).json({ success: false, error: 'No valid format!' });
-      return;
-  }
 
 });

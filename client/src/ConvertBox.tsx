@@ -19,6 +19,26 @@ interface Props {
   data: any;
   chooseFormat: (format: FormatType, videoMetadata: any) => void;
 }
+
+function getAllValues(obj: Record<string, any>): any[] {
+  const values: any[] = [];
+
+  function recurse(value: any): void {
+      if (typeof value === 'object' && value !== null) {
+          for (const key in value) {
+              if (value.hasOwnProperty(key)) {
+                  recurse(value[key]);
+              }
+          }
+      } else {
+          values.push(value);
+      }
+  }
+
+  recurse(obj);
+  return values;
+}
+
 export default function ConvertBox(props: Props) {
   const { data, chooseFormat } = props;
 
@@ -26,6 +46,8 @@ export default function ConvertBox(props: Props) {
 
   const updateFormats = () => {
 
+    const vals = getAllValues(props.data.formats);
+    console.log(vals);
     const newformats = formats.filter(
       (item: FormatType) => {
         if (!props.data) return false;
@@ -33,7 +55,7 @@ export default function ConvertBox(props: Props) {
 
         switch (item.type) {
           case 'aud':
-            return props.data.formats.some((item: { acodec?: string; }) => (item.acodec && item.acodec != 'none'));
+            return props.data.formats.some((item: { acodec?: string; }) => (item.acodec && item.acodec != 'none')) || vals.some((e)=>e.toString().toLowerCase().includes('audio'));
 
           case 'vid':
             return props.data.formats.some((item: { vcodec?: string; }) => (item.vcodec && item.vcodec != 'none'));

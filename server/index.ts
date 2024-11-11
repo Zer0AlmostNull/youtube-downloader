@@ -10,6 +10,8 @@ import { LRUCache } from 'lru-cache'
 import { fetchAndCache } from './cache';
 import { escapeFileName } from './helper';
 
+import { spawn } from 'child_process';
+
 
 
 // !!! IMPORTANT 
@@ -42,7 +44,7 @@ const getMetadata = async (url: string): Promise<any | undefined> => {
   }
 }
 
-const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok|vm.tiktok)([^\s]*)?$/i;
+const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram|twitter|x|tiktok|vm\.tiktok)([^\s]*)?$/i;
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
@@ -51,6 +53,7 @@ import * as fs_ from 'fs';
 
 import fs from 'fs/promises'; // Async fs with Promises
 import path from 'path';
+import { prependOnceListener } from 'process';
 
 
 
@@ -158,32 +161,42 @@ app.get('/download', async (req: Request, res: Response) => {
     switch (format) {
       case 'vid':
 
-
         res.setHeader('Content-Type', 'video/mp4');
         res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Transfer-Encoding', 'chunked');
         res.setHeader('Accept-Ranges', 'bytes');
 
-        let readableAVStream = ytDlpWrap.execStream([
-          url,
-          //'-f',
-          //'bestvideo+bestaudio/best',
-          //'--remux-video', 'mp4'
-          //'--print-traffic',
-          //'--remux-video', 'mp4',// <- recode id nescessary
-          //'--no-cache-dir',
-          //'--no-playlist'
-        ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
-          console.log(eventType, eventData))
-          .on('error', async (error) => await logToFile(`Download error (video): ${error}`))
-          .on('close', async () => await logToFile(`Video download closed: ${url}`));
 
-        readableAVStream.on('error', async (err) => { console.log(err); await logToFile(`Video stream error: ${url}`) });
+        const video_command = 'yt-dlp';
+        const video_args = [
+          '-f', 'bestvideo+bestaudio/best',
+          '--recode-video', 'mp4',
+          '--no-playlist',
+          '-q',
+          '-o', '-',
+          url
+        ];
+        const video_process = spawn(video_command, video_args, { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },);
 
-        readableAVStream.pipe(fs_.createWriteStream(`test${x++}.mp4`));
-        readableAVStream.pipe(res);
-      break;
+        video_process.stdout.pipe(res);
+
+        res.on('close', () => {
+          video_process.kill();
+          logToFile(`Connection closed for: ${url}`);
+        })
+
+        video_process.on('error', async (error) => {
+          await logToFile(`Failed to start process: ${error.message}`);
+          res.end();
+        });
+        // End the response when the process finishes
+        video_process.on('close', async (code) => {
+          await logToFile(`\nProcess exited with code ${code}`);
+          res.end();
+        });
+
+        break;
       case 'aud':
 
         res.writeHead(200, {
@@ -194,23 +207,39 @@ app.get('/download', async (req: Request, res: Response) => {
           'Accept-Ranges': 'bytes',
         })
 
-        let readableAudioStream = ytDlpWrap.execStream([
-          url,
+
+        const audio_command = 'yt-dlp';
+        const audio_args = [
           '-f', 'bestaudio/best',
           '-x',
           '--audio-format', 'mp3',
-          '--no-cache-dir',
-          '--recode-video', 'mp3'// <- recode id nescessart
+          '--recode-video', 'mp3',
+          '-q',
+          '-o', '-',
+          url
+        ];
+        const audio_process = spawn(audio_command, audio_args, { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },);
+        //const debug_file = fs_.createWriteStream(`file${x}.mp3`);
 
-        ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
-          console.log(eventType, eventData))
-          .on('error', async (error) => await logToFile(`Download error (audio): ${error}`))
-          .on('close', async () => await logToFile(`Audio download complete: ${url}`));
+        audio_process.stdout.pipe(res);
+        //audio_process.stdout.pipe(debug_file);
 
-        readableAudioStream.on('error', async (err) => { console.log(err); await logToFile(`Audio stream error: ${url}`) });
+        res.on('close', () => {
+          audio_process.kill();
+          logToFile(`Connection closed for (audio): ${url}`);
+        })
 
-        readableAudioStream.pipe(res);
-      break;
+        audio_process.on('error', async (error) => {
+          await logToFile(`Failed to start process: ${error.message}`);
+          res.end();
+        });
+        // End the response when the process finishes
+        audio_process.on('close', async (code) => {
+          await logToFile(`\nProcess exited with code ${code}`);
+          res.end();
+        });
+
+        break;
       default:
         res.status(400).json({ success: false, error: 'No valid format!' });
         return;

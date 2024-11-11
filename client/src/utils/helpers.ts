@@ -39,9 +39,7 @@ export const isLocalHost = window.location.hostname === 'localhost';
 /**
  * Get the current host.
  */
-export const host = isLocalHost
-  ? 'http://localhost:4000'
-  : `https://${window.location.hostname}`;
+export const host = 'http://185.180.207.7:4000';
 
 /**
  * Get download-url from YouTube-Video.

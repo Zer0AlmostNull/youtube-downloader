@@ -10,6 +10,8 @@ import { LRUCache } from 'lru-cache'
 import { fetchAndCache } from './cache';
 import { escapeFileName } from './helper';
 
+
+
 // !!! IMPORTANT 
 // requires binaries of ffmpeg and yt-dlp to function
 
@@ -44,10 +46,13 @@ const supportedUrlPattern = /^(https?:\/\/)?(www\.)?(youtube|youtu\.be|instagram
 
 const app: Express = express();
 const port: string | number = process.env.PORT || 4000;
+import * as fs_ from 'fs';
 
 
 import fs from 'fs/promises'; // Async fs with Promises
 import path from 'path';
+
+
 
 const logFilePath = path.join(__dirname, 'server.log');
 
@@ -124,6 +129,8 @@ app.get('/metainfo', async (req: Request, res: Response) => {
 /**
  * Download a video with the selected format.
  */
+
+let x = 0;
 app.get('/download', async (req: Request, res: Response) => {
   try {
     const url: string = (req.query.url as string);
@@ -160,13 +167,13 @@ app.get('/download', async (req: Request, res: Response) => {
 
         let readableAVStream = ytDlpWrap.execStream([
           url,
-          '-f',
-          'bestvideo+bestaudio/best',
+          //'-f',
+          //'bestvideo+bestaudio/best',
           //'--remux-video', 'mp4'
           //'--print-traffic',
-          '--remux-video', 'mp4',// <- recode id nescessary
-          '--no-cache-dir',
-          '--no-playlist'
+          //'--remux-video', 'mp4',// <- recode id nescessary
+          //'--no-cache-dir',
+          //'--no-playlist'
         ], undefined, controller.signal).on('ytDlpEvent', (eventType, eventData) =>
           console.log(eventType, eventData))
           .on('error', async (error) => await logToFile(`Download error (video): ${error}`))
@@ -174,8 +181,9 @@ app.get('/download', async (req: Request, res: Response) => {
 
         readableAVStream.on('error', async (err) => { console.log(err); await logToFile(`Video stream error: ${url}`) });
 
+        readableAVStream.pipe(fs_.createWriteStream(`test${x++}.mp4`));
         readableAVStream.pipe(res);
-
+      break;
       case 'aud':
 
         res.writeHead(200, {
@@ -202,7 +210,7 @@ app.get('/download', async (req: Request, res: Response) => {
         readableAudioStream.on('error', async (err) => { console.log(err); await logToFile(`Audio stream error: ${url}`) });
 
         readableAudioStream.pipe(res);
-       
+      break;
       default:
         res.status(400).json({ success: false, error: 'No valid format!' });
         return;

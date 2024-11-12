@@ -13,6 +13,20 @@ import { escapeFileName } from './helper';
 import { spawn } from 'child_process';
 
 
+function removeParamsFromUrl(url: string) {
+  // Check if 'tiktok' is present in the URL
+  if (url.includes('tiktok')) {
+      // Create a new URL object to parse the URL
+      const parsedUrl = new URL(url);
+
+      // Remove the search (query parameters)
+      parsedUrl.search = ''; // Clears all query parameters
+
+      // Return the modified URL
+      return parsedUrl.toString();
+  }
+  return url; // If 'tiktok' is not in the URL, return it as is
+}
 
 // !!! IMPORTANT 
 // requires binaries of ffmpeg and yt-dlp to function
@@ -112,11 +126,14 @@ app.post('/contact', async (req: Request, res: Response) => {
  * Get information about a video.
  */
 app.get('/metainfo', async (req: Request, res: Response) => {
-  const url = req.query.url as string;
+  let url = req.query.url as string;
+
+  url = removeParamsFromUrl(url);
 
   if (!supportedUrlPattern.test(url)) {
     res.status(400).json({ success: false, message: 'Unsupported website!' });
   }
+
 
 
   const result = await getMetadata(url);
@@ -136,8 +153,11 @@ app.get('/metainfo', async (req: Request, res: Response) => {
 let x = 0;
 app.get('/download', async (req: Request, res: Response) => {
   try {
-    const url: string = (req.query.url as string);
+    let url: string = (req.query.url as string);
     const format: string = (req.query.format as string || 'vid');
+
+
+    url = removeParamsFromUrl(url);
 
     if (!supportedUrlPattern.test(url)) {
       res.status(400).json({ success: false, message: 'Unsupported website!' });

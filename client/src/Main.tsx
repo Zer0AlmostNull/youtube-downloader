@@ -12,7 +12,7 @@ import {
   AlertTitle,
 } from '@chakra-ui/react';
 
-
+import Popup from 'reactjs-popup';
 import { useEffect, useRef, useState } from 'react';
 import Features from './Features';
 import FeaturesComingSoon from './FeaturesComingSoon';
@@ -26,6 +26,7 @@ import { getMetadata } from './utils/API';
 
 import white_logo from './Icons/white_logo.png';
 import black_logo from './Icons/black_logo.png';
+import { Adsense } from '@ctrl/react-adsense';
 
 
 export default function Main() {
@@ -132,10 +133,10 @@ export default function Main() {
 
   };
 
-  const startDownload = async (format: FormatType, videoMetadata: any) => {    
-    
+  const startDownload = async (format: FormatType, videoMetadata: any) => {
+
     try {
-      
+
       const downloadUrl = getDownloadUrl(videoMetadata, format);
 
       setDownloadUrl(downloadUrl);
@@ -166,6 +167,8 @@ export default function Main() {
         handleDeleteHistory={handleDeleteHistory}
       />
       <Container maxW="container.md">
+
+
         <Box textAlign="center" fontSize="xl">
           <Box mt="5" mb="5">
             <Heading size="2xl" mb="2">
@@ -185,9 +188,16 @@ export default function Main() {
             loadingState={appState}
           />
         </Box>
+
+
+
+
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}
         <Features />
       </Container>
+      <Popup trigger={<button> Trigger</button>} position="right center">
+        <div>Popup content here !!</div>
+      </Popup>
       <VisuallyHidden>
         <a href={downloadUrl} download ref={downloadBtnRef}>
           {downloadUrl}

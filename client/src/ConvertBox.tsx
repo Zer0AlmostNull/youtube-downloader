@@ -55,7 +55,7 @@ export default function ConvertBox(props: Props) {
 
         switch (item.type) {
           case 'aud':
-            return props.data.formats.some((item: { acodec?: string; }) => (item.acodec && item.acodec != 'none')) || vals.some((e)=>e.toString().toLowerCase().includes('audio'));
+            return props.data.formats.some((item: { acodec?: string; }) => (item.acodec && item.acodec != 'none')) || vals.some((e)=>e?.toString()?.toLowerCase().includes('audio'));
 
           case 'vid':
             return props.data.formats.some((item: { vcodec?: string; }) => (item.vcodec && item.vcodec != 'none'));

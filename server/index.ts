@@ -171,6 +171,7 @@ app.get('/download', async (req: Request, res: Response) => {
         const video_command = 'yt-dlp';
         const video_args = [
           '-f', 'bestvideo+bestaudio/best',
+          '-S','+vcodec:h264,+acodec:mp3',
           '--recode-video', 'mp4',
           '--no-playlist',
           '-q',
@@ -211,28 +212,52 @@ app.get('/download', async (req: Request, res: Response) => {
         const audio_command = 'yt-dlp';
         const audio_args = [
           '-f', 'bestaudio/best',
-          '-x',
+          '-S','+vcodec:h264,+acodec:mp3',
           '--audio-format', 'mp3',
           '--recode-video', 'mp3',
           '-q',
-          '-o', '-',
+          '-o', '-', 
           url
         ];
-        const audio_process = spawn(audio_command, audio_args, { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },);
-        //const debug_file = fs_.createWriteStream(`file${x}.mp3`);
+        //const debug_file = fs_.createWriteStream(`yt_dlp${x}.mp3`);
+        //const debug_file_ff = fs_.createWriteStream(`ff${x}.mp3`);
 
-        audio_process.stdout.pipe(res);
+
+        const ffmpeg_command = 'ffmpeg';
+        const ffmpeg_args = [      
+          '-i', '-', 
+          '-f', 'mp3',
+          '-'
+        ];
+        const audio_process = spawn(audio_command, audio_args, { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },);
+        const ffmpeg_process = spawn(ffmpeg_command, ffmpeg_args, { stdio: ['pipe', 'pipe', 'pipe'] });
+
+        audio_process.stdout.pipe(ffmpeg_process.stdin);
         //audio_process.stdout.pipe(debug_file);
+
+
+        ffmpeg_process.stdout.pipe(res);
+
 
         res.on('close', () => {
           audio_process.kill();
+          ffmpeg_process.kill();
           logToFile(`Connection closed for (audio): ${url}`);
         })
+
+
+        ffmpeg_process.on('error', async (error) => {
+          await logToFile(`Failed to convert file (ffmpeg): ${error.message}`);
+          audio_process.kill();
+          res.end();
+        });
+        
 
         audio_process.on('error', async (error) => {
           await logToFile(`Failed to start process: ${error.message}`);
           res.end();
         });
+
         // End the response when the process finishes
         audio_process.on('close', async (code) => {
           await logToFile(`\nProcess exited with code ${code}`);

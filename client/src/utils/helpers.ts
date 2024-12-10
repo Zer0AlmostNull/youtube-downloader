@@ -39,7 +39,7 @@ export const isLocalHost = window.location.hostname === 'localhost';
 /**
  * Get the current host.
  */
-export const host = 'http://185.180.207.7:4000';
+export const host = 'https://api.clipgrab.net';
 
 /**
  * Get download-url from YouTube-Video.

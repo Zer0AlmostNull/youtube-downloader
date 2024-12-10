@@ -10,20 +10,20 @@ import { LRUCache } from 'lru-cache'
 import { fetchAndCache } from './cache';
 import { escapeFileName } from './helper';
 
-import { spawn } from 'child_process';
+import { spawn, execSync, spawnSync } from 'child_process';
 
 
 function removeParamsFromUrl(url: string) {
   // Check if 'tiktok' is present in the URL
   if (url.includes('tiktok')) {
-      // Create a new URL object to parse the URL
-      const parsedUrl = new URL(url);
+    // Create a new URL object to parse the URL
+    const parsedUrl = new URL(url);
 
-      // Remove the search (query parameters)
-      parsedUrl.search = ''; // Clears all query parameters
+    // Remove the search (query parameters)
+    parsedUrl.search = ''; // Clears all query parameters
 
-      // Return the modified URL
-      return parsedUrl.toString();
+    // Return the modified URL
+    return parsedUrl.toString();
   }
   return url; // If 'tiktok' is not in the URL, return it as is
 }
@@ -41,17 +41,44 @@ const metadataCache = new LRUCache<string, any>({
 
 
 const getMetadata = async (url: string): Promise<any | undefined> => {
-
   try {
     const result = await fetchAndCache(metadataCache, url, async (param: string) => {
-      const value = await ytDlpWrap.getVideoInfo(
-        param
-      );
 
-      return (value);
+      try {
+
+        const binary = 'yt-dlp';
+        const video_args = [
+          '--dump-json',
+          url
+        ];
+        //const process = spawn(binary, video_args, { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },);
+        //console.log(`${binary} ${video_args.join(' ')}`)
+        const result = spawnSync(binary, video_args, { shell: false, stdio: ['pipe', 'pipe', 'pipe'] });
+        const stdout = result.stdout.toString();  // Convert the stdout buffer to a string
+
+        // Capture stderr if needed
+        const stderr = result.stderr.toString();
+
+        // Capture the exit status
+        const exitCode = result.status;
+
+        
+        if (exitCode == 0) {
+          return JSON.parse(stdout);
+        }
+        else {
+          return undefined;
+        }
+      }
+      catch (error: any) {
+        console.log(error);
+
+        return undefined;
+      }
+
     });
-
-    return result
+    
+    return result;
   }
   catch {
     return undefined;
@@ -67,7 +94,6 @@ import * as fs_ from 'fs';
 
 import fs from 'fs/promises'; // Async fs with Promises
 import path from 'path';
-import { prependOnceListener } from 'process';
 
 
 
@@ -142,7 +168,7 @@ app.get('/metainfo', async (req: Request, res: Response) => {
     res.status(200).json({ success: true, data: result });
   }
   else {
-    res.status(400).json({ success: false, message: 'Unsupported website!' });
+    res.status(400).json({ success: false, message: 'Internal server error!' });
   }
 });
 
@@ -191,7 +217,7 @@ app.get('/download', async (req: Request, res: Response) => {
         const video_command = 'yt-dlp';
         const video_args = [
           '-f', 'bestvideo+bestaudio/best',
-          '-S','+vcodec:h264,+acodec:mp3',
+          '-S', '+vcodec:h264,+acodec:mp3',
           '--recode-video', 'mp4',
           '--no-playlist',
           '-q',
@@ -232,11 +258,11 @@ app.get('/download', async (req: Request, res: Response) => {
         const audio_command = 'yt-dlp';
         const audio_args = [
           '-f', 'bestaudio/best',
-          '-S','+vcodec:h264,+acodec:mp3',
+          '-S', '+vcodec:h264,+acodec:mp3',
           '--audio-format', 'mp3',
           '--recode-video', 'mp3',
           '-q',
-          '-o', '-', 
+          '-o', '-',
           url
         ];
         //const debug_file = fs_.createWriteStream(`yt_dlp${x}.mp3`);
@@ -244,8 +270,8 @@ app.get('/download', async (req: Request, res: Response) => {
 
 
         const ffmpeg_command = 'ffmpeg';
-        const ffmpeg_args = [      
-          '-i', '-', 
+        const ffmpeg_args = [
+          '-i', '-',
           '-f', 'mp3',
           '-'
         ];
@@ -271,7 +297,7 @@ app.get('/download', async (req: Request, res: Response) => {
           audio_process.kill();
           res.end();
         });
-        
+
 
         audio_process.on('error', async (error) => {
           await logToFile(`Failed to start process: ${error.message}`);

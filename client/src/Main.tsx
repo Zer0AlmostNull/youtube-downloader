@@ -15,7 +15,6 @@ import {
 import Popup from 'reactjs-popup';
 import { useEffect, useRef, useState } from 'react';
 import Features from './Features';
-import FeaturesComingSoon from './FeaturesComingSoon';
 import NothingFoundAlert from './NothingFoundAlert';
 import PreviewBox from './PreviewBox';
 import Search from './Search';
@@ -26,7 +25,6 @@ import { getMetadata } from './utils/API';
 
 import white_logo from './Icons/white_logo.png';
 import black_logo from './Icons/black_logo.png';
-import { Adsense } from '@ctrl/react-adsense';
 
 
 export default function Main() {
@@ -42,6 +40,8 @@ export default function Main() {
   const [error, setError] = useState(false);
   const downloadBtnRef = useRef<HTMLAnchorElement>(null);
   const [downloads, setHistoryDownloads] = useState<HistoryItem[]>([]);
+
+  const adCodeSnippet = '<script async="async" data-cfasync="false" src="//pl25104486.profitablecpmrate.com/3a51c2eb781f16543d1ac7494ea20908/invoke.js"></script><div id="container-3a51c2eb781f16543d1ac7494ea20908"></div>';
 
   useEffect(() => {
     const storedDownloads = localStorage.getItem('downloads');
@@ -167,14 +167,14 @@ export default function Main() {
         handleDeleteHistory={handleDeleteHistory}
       />
       <Container maxW="container.md">
-
-
+       
         <Box textAlign="center" fontSize="xl">
           <Box mt="5" mb="5">
             <Heading size="2xl" mb="2">
               {colorMode === 'light' ? <img src={black_logo} alt="logoblack"></img> : <img src={white_logo} alt="logowhite"></img>}
             </Heading>
           </Box>
+          <div id="container-3a51c2eb781f16543d1ac7494ea20908"></div>
           <Search
             handleChange={handleChange}
             handleSearch={handleSearch}
@@ -187,17 +187,11 @@ export default function Main() {
             chooseFormat={startDownload}
             loadingState={appState}
           />
+
         </Box>
-
-
-
-
         {pagingInfo?.totalResults === 0 && <NothingFoundAlert />}
         <Features />
       </Container>
-      <Popup trigger={<button> Trigger</button>} position="right center">
-        <div>Popup content here !!</div>
-      </Popup>
       <VisuallyHidden>
         <a href={downloadUrl} download ref={downloadBtnRef}>
           {downloadUrl}
